@@ -11,6 +11,8 @@ class DynamicLibrary {
   }
 
   symbol (name) {
+    if (this.closed) throw new Error('Library is closed')
+
     const handle = b4a.allocUnsafe(binding.sizeof_uv_napi_sym_t)
 
     binding.uv_napi_dlsym(this._handle, name, handle)

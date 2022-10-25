@@ -18,3 +18,10 @@ test('symbol', async (t) => {
   const ptr = lib.symbol('uv_napi_dlopen')
   t.ok(ptr)
 })
+
+test('symbol after close', async (t) => {
+  const lib = open('build/Release/dl.node')
+  lib.close()
+
+  t.exception(() => lib.symbol('uv_napi_dlopen'), /Library is closed/)
+})
