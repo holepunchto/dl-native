@@ -23,6 +23,8 @@ class DynamicLibrary {
     this.closed = true
 
     binding.uv_napi_dlclose(this._handle)
+
+    this._handle = null
   }
 }
 
