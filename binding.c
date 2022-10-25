@@ -5,13 +5,13 @@
 
 typedef struct {
   uv_lib_t lib;
-} uv_napi_lib_t;
+} dl_napi_lib_t;
 
-typedef void *uv_napi_sym_t;
+typedef void *dl_napi_sym_t;
 
-NAPI_METHOD(uv_napi_dlopen) {
+NAPI_METHOD(dl_napi_open) {
   NAPI_ARGV(2)
-  NAPI_ARGV_BUFFER_CAST(uv_napi_lib_t *, lib, 0)
+  NAPI_ARGV_BUFFER_CAST(dl_napi_lib_t *, lib, 0)
   NAPI_ARGV_UTF8_MALLOC(filename, 1)
 
   int err = uv_dlopen(filename, &lib->lib);
@@ -23,20 +23,20 @@ NAPI_METHOD(uv_napi_dlopen) {
   return NULL;
 }
 
-NAPI_METHOD(uv_napi_dlclose) {
+NAPI_METHOD(dl_napi_close) {
   NAPI_ARGV(1)
-  NAPI_ARGV_BUFFER_CAST(uv_napi_lib_t *, lib, 0)
+  NAPI_ARGV_BUFFER_CAST(dl_napi_lib_t *, lib, 0)
 
   uv_dlclose(&lib->lib);
 
   return NULL;
 }
 
-NAPI_METHOD(uv_napi_dlsym) {
+NAPI_METHOD(dl_napi_sym) {
   NAPI_ARGV(3)
-  NAPI_ARGV_BUFFER_CAST(uv_napi_lib_t *, lib, 0)
+  NAPI_ARGV_BUFFER_CAST(dl_napi_lib_t *, lib, 0)
   NAPI_ARGV_UTF8_MALLOC(name, 1)
-  NAPI_ARGV_BUFFER_CAST(uv_napi_sym_t *, sym, 2)
+  NAPI_ARGV_BUFFER_CAST(dl_napi_sym_t *, sym, 2)
 
   int err = uv_dlsym(&lib->lib, name, sym);
 
@@ -47,9 +47,9 @@ NAPI_METHOD(uv_napi_dlsym) {
   return NULL;
 }
 
-NAPI_METHOD(uv_napi_dlexports) {
+NAPI_METHOD(dl_napi_exports) {
   NAPI_ARGV(2)
-  NAPI_ARGV_BUFFER_CAST(uv_napi_lib_t *, lib, 0)
+  NAPI_ARGV_BUFFER_CAST(dl_napi_lib_t *, lib, 0)
   NAPI_ARGV_UTF8_MALLOC(name, 1)
 
   napi_addon_register_func cb;
@@ -67,11 +67,11 @@ NAPI_METHOD(uv_napi_dlexports) {
 }
 
 NAPI_INIT() {
-  NAPI_EXPORT_SIZEOF(uv_napi_lib_t)
-  NAPI_EXPORT_SIZEOF(uv_napi_sym_t)
+  NAPI_EXPORT_SIZEOF(dl_napi_lib_t)
+  NAPI_EXPORT_SIZEOF(dl_napi_sym_t)
 
-  NAPI_EXPORT_FUNCTION(uv_napi_dlopen)
-  NAPI_EXPORT_FUNCTION(uv_napi_dlclose)
-  NAPI_EXPORT_FUNCTION(uv_napi_dlsym)
-  NAPI_EXPORT_FUNCTION(uv_napi_dlexports)
+  NAPI_EXPORT_FUNCTION(dl_napi_open)
+  NAPI_EXPORT_FUNCTION(dl_napi_close)
+  NAPI_EXPORT_FUNCTION(dl_napi_sym)
+  NAPI_EXPORT_FUNCTION(dl_napi_exports)
 }
