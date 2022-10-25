@@ -20,6 +20,12 @@ class DynamicLibrary {
     return handle
   }
 
+  exports (name) {
+    if (this.closed) throw new Error('Library is closed')
+
+    return binding.uv_napi_dlexports(this._handle, name)
+  }
+
   close () {
     if (this.closed) return
     this.closed = true

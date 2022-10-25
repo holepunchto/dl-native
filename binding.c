@@ -47,6 +47,25 @@ NAPI_METHOD(uv_napi_dlsym) {
   return NULL;
 }
 
+NAPI_METHOD(uv_napi_dlexports) {
+  NAPI_ARGV(2)
+  NAPI_ARGV_BUFFER_CAST(uv_napi_lib_t *, lib, 0)
+  NAPI_ARGV_UTF8_MALLOC(name, 1)
+
+  napi_addon_register_func cb;
+
+  int err = uv_dlsym(&lib->lib, name, (void **) &cb);
+
+  if (err < 0) napi_throw_error(env, NULL, uv_dlerror(&lib->lib));
+
+  napi_value exports;
+  napi_create_object(env, &exports);
+
+  cb(env, exports);
+
+  return exports;
+}
+
 NAPI_INIT() {
   NAPI_EXPORT_SIZEOF(uv_napi_lib_t)
   NAPI_EXPORT_SIZEOF(uv_napi_sym_t)
@@ -54,4 +73,5 @@ NAPI_INIT() {
   NAPI_EXPORT_FUNCTION(uv_napi_dlopen)
   NAPI_EXPORT_FUNCTION(uv_napi_dlclose)
   NAPI_EXPORT_FUNCTION(uv_napi_dlsym)
+  NAPI_EXPORT_FUNCTION(uv_napi_dlexports)
 }
