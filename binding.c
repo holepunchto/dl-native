@@ -56,6 +56,8 @@ NAPI_METHOD(dl_napi_exports) {
 
   int err = uv_dlsym(&lib->lib, name, (void **) &cb);
 
+  free(name);
+
   if (err < 0) napi_throw_error(env, NULL, uv_dlerror(&lib->lib));
 
   napi_value exports;
