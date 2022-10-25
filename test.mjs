@@ -5,10 +5,10 @@ import { open } from './index.js'
 test('open + close', async (t) => {
   const lib = open('build/Release/dl.node')
   t.ok(lib)
-  t.absent(lib.closed)
+  t.is(lib.closed, false)
 
   lib.close()
-  t.ok(lib.closed)
+  t.is(lib.closed, true)
 })
 
 test('symbol', async (t) => {
