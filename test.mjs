@@ -11,6 +11,13 @@ test('open + close', async (t) => {
   t.is(lib.closed, true)
 })
 
+test('close multiple times', async (t) => {
+  const lib = open('build/Release/dl.node')
+
+  lib.close()
+  t.execution(() => lib.close())
+})
+
 test('symbol', async (t) => {
   const lib = open('build/Release/dl.node')
   t.teardown(() => lib.close())
