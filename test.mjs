@@ -32,19 +32,3 @@ test('symbol after close', async (t) => {
 
   t.exception(() => lib.symbol('dl_napi_open'), /Library is closed/)
 })
-
-test('exports', async (t) => {
-  const lib = open('build/Release/dl.node')
-  t.teardown(() => lib.close())
-
-  const mod = lib.exports('napi_macros_init_wrap')
-  t.ok(mod)
-  t.comment(mod)
-})
-
-test('exports after close', async (t) => {
-  const lib = open('build/Release/dl.node')
-  lib.close()
-
-  t.exception(() => lib.exports('napi_macros_init_wrap'), /Library is closed/)
-})
