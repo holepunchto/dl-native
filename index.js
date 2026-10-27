@@ -1,41 +1,35 @@
-const binding = require('node-gyp-build')(__dirname)
 const b4a = require('b4a')
+const binding = require('./binding')
 
 class DynamicLibrary {
-  constructor (filename) {
-    this._handle = b4a.allocUnsafe(binding.sizeof_dl_napi_lib_t)
+  constructor(filename) {
+    this._handle = binding.open(filename)
 
     this.closed = false
-
-    binding.dl_napi_open(this._handle, filename)
   }
 
-  symbol (name) {
+  symbol(name) {
     if (this.closed) throw new Error('Library is closed')
 
-    const handle = b4a.allocUnsafe(binding.sizeof_dl_napi_sym_t)
-
-    binding.dl_napi_sym(this._handle, name, handle)
-
-    return handle
+    return b4a.from(binding.sym(this._handle, name))
   }
 
-  exports (name) {
+  exports(name) {
     if (this.closed) throw new Error('Library is closed')
 
-    return binding.dl_napi_exports(this._handle, name)
+    return binding.exports(this._handle, name)
   }
 
-  close () {
+  close() {
     if (this.closed) return
     this.closed = true
 
-    binding.dl_napi_close(this._handle)
+    binding.close(this._handle)
 
     this._handle = null
   }
 }
 
-exports.open = function open (filename) {
+exports.open = function open(filename) {
   return new DynamicLibrary(filename)
 }

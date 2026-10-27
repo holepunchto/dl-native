@@ -2,8 +2,16 @@ import test from 'brittle'
 
 import { open } from './index.js'
 
-test('open + close', async (t) => {
-  const lib = open('build/Release/dl.node')
+const isBare = typeof Bare !== 'undefined'
+
+const { platform, arch } = isBare ? Bare : process
+
+const addon = `prebuilds/${platform}-${arch}/dl-native.${isBare ? 'bare' : 'node'}`
+
+const register = isBare ? 'bare_register_module_v0' : 'napi_register_module_v1'
+
+test('open + close', (t) => {
+  const lib = open(addon)
   t.ok(lib)
   t.is(lib.closed, false)
 
@@ -11,24 +19,44 @@ test('open + close', async (t) => {
   t.is(lib.closed, true)
 })
 
-test('close multiple times', async (t) => {
-  const lib = open('build/Release/dl.node')
+test('open missing library', (t) => {
+  t.exception(() => open('missing'))
+})
+
+test('close multiple times', (t) => {
+  const lib = open(addon)
 
   lib.close()
   t.execution(() => lib.close())
 })
 
-test('symbol', async (t) => {
-  const lib = open('build/Release/dl.node')
+test('symbol', (t) => {
+  const lib = open(addon)
   t.teardown(() => lib.close())
 
-  const ptr = lib.symbol('dl_napi_open')
+  const ptr = lib.symbol(register)
   t.ok(ptr)
 })
 
-test('symbol after close', async (t) => {
-  const lib = open('build/Release/dl.node')
+test('symbol missing', (t) => {
+  const lib = open(addon)
+  t.teardown(() => lib.close())
+
+  t.exception(() => lib.symbol('missing'))
+})
+
+test('symbol after close', (t) => {
+  const lib = open(addon)
   lib.close()
 
-  t.exception(() => lib.symbol('dl_napi_open'), /Library is closed/)
+  t.exception(() => lib.symbol(register), /Library is closed/)
+})
+
+test('exports', (t) => {
+  const lib = open(addon)
+  t.teardown(() => lib.close())
+
+  const mod = lib.exports(register)
+  t.is(typeof mod.open, 'function')
+  t.is(typeof mod.exports, 'function')
 })

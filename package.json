@@ -1,18 +1,25 @@
 {
   "name": "dl-native",
   "version": "1.0.0",
-  "description": "Dynamic library JavaScript bindings for Node.js",
-  "main": "index.js",
+  "description": "Dynamic library bindings for JavaScript",
+  "exports": {
+    "./package": "./package.json",
+    ".": "./index.js"
+  },
   "files": [
     "index.js",
-    "prebuilds",
     "binding.c",
-    "binding.gyp"
+    "binding.js",
+    "CMakeLists.txt",
+    "prebuilds"
   ],
+  "addon": true,
   "scripts": {
-    "test": "standard && brittle test.mjs",
-    "prebuild": "prebuildify --napi",
-    "install": "node-gyp-build"
+    "format": "prettier --write . && lunte --fix",
+    "lint": "prettier --check . && lunte",
+    "test": "npm run test:bare && npm run test:node",
+    "test:bare": "brittle-bare --coverage test.mjs",
+    "test:node": "brittle-node --coverage test.mjs"
   },
   "repository": {
     "type": "git",
@@ -25,13 +32,16 @@
   },
   "homepage": "https://github.com/holepunchto/dl-native#readme",
   "dependencies": {
-    "b4a": "^1.6.0",
-    "napi-macros": "^2.0.0",
-    "node-gyp-build": "^4.2.3"
+    "b4a": "^1.6.7",
+    "require-addon": "^1.1.0"
   },
   "devDependencies": {
+    "bare-compat-napi": "^1.3.9",
     "brittle": "^3.1.0",
-    "prebuildify": "^5.0.1",
-    "standard": "^17.0.0"
+    "cmake-bare": "^1.1.7",
+    "cmake-napi": "^1.0.2",
+    "lunte": "^1.8.6",
+    "prettier": "^3.6.2",
+    "prettier-config-holepunch": "^2.0.0"
   }
 }

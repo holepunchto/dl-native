@@ -1,79 +1,185 @@
-#include <napi-macros.h>
-#include <node_api.h>
+#include <assert.h>
+#include <bare.h>
+#include <js.h>
 #include <stdlib.h>
+#include <utf.h>
 #include <uv.h>
 
 typedef struct {
   uv_lib_t lib;
-} dl_napi_lib_t;
+} dl_native_lib_t;
 
-typedef void *dl_napi_sym_t;
+typedef js_value_t *(*dl_native_exports_cb)(js_env_t *env, js_value_t *exports);
 
-NAPI_METHOD(dl_napi_open) {
-  NAPI_ARGV(2)
-  NAPI_ARGV_BUFFER_CAST(dl_napi_lib_t *, lib, 0)
-  NAPI_ARGV_UTF8_MALLOC(filename, 1)
+static utf8_t *
+dl_native_get_string(js_env_t *env, js_value_t *value) {
+  int err;
 
-  int err = uv_dlopen(filename, &lib->lib);
+  size_t len;
+  err = js_get_value_string_utf8(env, value, NULL, 0, &len);
+  assert(err == 0);
+
+  len += 1 /* NULL */;
+
+  utf8_t *str = malloc(len);
+  err = js_get_value_string_utf8(env, value, str, len, NULL);
+  assert(err == 0);
+
+  return str;
+}
+
+static js_value_t *
+dl_native_open(js_env_t *env, js_callback_info_t *info) {
+  int err;
+
+  size_t argc = 1;
+  js_value_t *argv[1];
+
+  err = js_get_callback_info(env, info, &argc, argv, NULL, NULL);
+  assert(err == 0);
+
+  assert(argc == 1);
+
+  js_value_t *handle;
+
+  dl_native_lib_t *lib;
+  err = js_create_arraybuffer(env, sizeof(dl_native_lib_t), (void **) &lib, &handle);
+  assert(err == 0);
+
+  utf8_t *filename = dl_native_get_string(env, argv[0]);
+
+  err = uv_dlopen((char *) filename, &lib->lib);
 
   free(filename);
 
-  if (err < 0) napi_throw_error(env, NULL, uv_dlerror(&lib->lib));
+  if (err < 0) {
+    err = js_throw_error(env, NULL, uv_dlerror(&lib->lib));
+    assert(err == 0);
 
-  return NULL;
+    uv_dlclose(&lib->lib);
+
+    return NULL;
+  }
+
+  return handle;
 }
 
-NAPI_METHOD(dl_napi_close) {
-  NAPI_ARGV(1)
-  NAPI_ARGV_BUFFER_CAST(dl_napi_lib_t *, lib, 0)
+static js_value_t *
+dl_native_close(js_env_t *env, js_callback_info_t *info) {
+  int err;
+
+  size_t argc = 1;
+  js_value_t *argv[1];
+
+  err = js_get_callback_info(env, info, &argc, argv, NULL, NULL);
+  assert(err == 0);
+
+  assert(argc == 1);
+
+  dl_native_lib_t *lib;
+  err = js_get_arraybuffer_info(env, argv[0], (void **) &lib, NULL);
+  assert(err == 0);
 
   uv_dlclose(&lib->lib);
 
   return NULL;
 }
 
-NAPI_METHOD(dl_napi_sym) {
-  NAPI_ARGV(3)
-  NAPI_ARGV_BUFFER_CAST(dl_napi_lib_t *, lib, 0)
-  NAPI_ARGV_UTF8_MALLOC(name, 1)
-  NAPI_ARGV_BUFFER_CAST(dl_napi_sym_t *, sym, 2)
+static js_value_t *
+dl_native_sym(js_env_t *env, js_callback_info_t *info) {
+  int err;
 
-  int err = uv_dlsym(&lib->lib, name, sym);
+  size_t argc = 2;
+  js_value_t *argv[2];
+
+  err = js_get_callback_info(env, info, &argc, argv, NULL, NULL);
+  assert(err == 0);
+
+  assert(argc == 2);
+
+  dl_native_lib_t *lib;
+  err = js_get_arraybuffer_info(env, argv[0], (void **) &lib, NULL);
+  assert(err == 0);
+
+  js_value_t *handle;
+
+  void **sym;
+  err = js_create_arraybuffer(env, sizeof(void *), (void **) &sym, &handle);
+  assert(err == 0);
+
+  utf8_t *name = dl_native_get_string(env, argv[1]);
+
+  err = uv_dlsym(&lib->lib, (char *) name, sym);
 
   free(name);
 
-  if (err < 0) napi_throw_error(env, NULL, uv_dlerror(&lib->lib));
+  if (err < 0) {
+    err = js_throw_error(env, NULL, uv_dlerror(&lib->lib));
+    assert(err == 0);
 
-  return NULL;
+    return NULL;
+  }
+
+  return handle;
 }
 
-NAPI_METHOD(dl_napi_exports) {
-  NAPI_ARGV(2)
-  NAPI_ARGV_BUFFER_CAST(dl_napi_lib_t *, lib, 0)
-  NAPI_ARGV_UTF8_MALLOC(name, 1)
+static js_value_t *
+dl_native_exports(js_env_t *env, js_callback_info_t *info) {
+  int err;
 
-  napi_addon_register_func cb;
+  size_t argc = 2;
+  js_value_t *argv[2];
 
-  int err = uv_dlsym(&lib->lib, name, (void **) &cb);
+  err = js_get_callback_info(env, info, &argc, argv, NULL, NULL);
+  assert(err == 0);
+
+  assert(argc == 2);
+
+  dl_native_lib_t *lib;
+  err = js_get_arraybuffer_info(env, argv[0], (void **) &lib, NULL);
+  assert(err == 0);
+
+  utf8_t *name = dl_native_get_string(env, argv[1]);
+
+  dl_native_exports_cb cb;
+  err = uv_dlsym(&lib->lib, (char *) name, (void **) &cb);
 
   free(name);
 
-  if (err < 0) napi_throw_error(env, NULL, uv_dlerror(&lib->lib));
+  if (err < 0) {
+    err = js_throw_error(env, NULL, uv_dlerror(&lib->lib));
+    assert(err == 0);
 
-  napi_value exports;
-  napi_create_object(env, &exports);
+    return NULL;
+  }
 
-  cb(env, exports);
+  js_value_t *exports;
+  err = js_create_object(env, &exports);
+  assert(err == 0);
+
+  return cb(env, exports);
+}
+
+static js_value_t *
+dl_native_exports_init(js_env_t *env, js_value_t *exports) {
+  int err;
+
+#define V(name, fn) \
+  { \
+    js_value_t *val; \
+    err = js_create_function(env, name, -1, fn, NULL, &val); \
+    assert(err == 0); \
+    err = js_set_named_property(env, exports, name, val); \
+    assert(err == 0); \
+  }
+
+  V("open", dl_native_open)
+  V("close", dl_native_close)
+  V("sym", dl_native_sym)
+  V("exports", dl_native_exports)
+#undef V
 
   return exports;
 }
 
-NAPI_INIT() {
-  NAPI_EXPORT_SIZEOF(dl_napi_lib_t)
-  NAPI_EXPORT_SIZEOF(dl_napi_sym_t)
-
-  NAPI_EXPORT_FUNCTION(dl_napi_open)
-  NAPI_EXPORT_FUNCTION(dl_napi_close)
-  NAPI_EXPORT_FUNCTION(dl_napi_sym)
-  NAPI_EXPORT_FUNCTION(dl_napi_exports)
-}
+BARE_MODULE(dl_native, dl_native_exports_init)

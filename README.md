@@ -1,6 +1,6 @@
 # dl-native
 
-Dynamic library JavaScript bindings for Node.js.
+Dynamic library bindings for JavaScript.
 
 ```sh
 npm install dl-native
@@ -11,7 +11,7 @@ npm install dl-native
 ```js
 const { open } = require('dl-native')
 
-const lib = open('lib.node')
+const lib = open('lib.bare')
 
 const mod = lib.exports('init')
 ```
@@ -28,11 +28,11 @@ Close the library. This will decrement the reference count of the underlying lib
 
 #### `const buf = lib.symbol(name)`
 
-Retrieve a pointer to the symbol referred to by `name`. The pointer is represented as a buffer and may be passed to other Node-API functions and cast to a concrete type.
+Retrieve a pointer to the symbol referred to by `name`. The pointer is represented as a buffer and may be passed to other native functions and cast to a concrete type.
 
 #### `const mod = lib.exports(name)`
 
-Return the declarations exported by the function pointer referred to by `name`. The function pointer must be of type `napi_addon_register_func` and will typically be the Node-API initialisation function of the library.
+Return the declarations exported by the function pointer referred to by `name`. The function pointer must be of type `bare_module_register_cb` in Bare and `napi_addon_register_func` in Node.js, and will typically be the module initialisation function of the library, such as `bare_register_module_v0` or `napi_register_module_v1`.
 
 ## License
 
