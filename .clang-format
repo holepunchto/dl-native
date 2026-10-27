@@ -2,13 +2,9 @@ AlignAfterOpenBracket: BlockIndent
 AlignConsecutiveMacros: Consecutive
 AlignEscapedNewlines: DontAlign
 AllowShortIfStatementsOnASingleLine: AllIfsAndElse
-AlwaysBreakAfterReturnType: TopLevel
+AlwaysBreakAfterReturnType: All
 BinPackArguments: false
 BinPackParameters: false
 ContinuationIndentWidth: 2
 ColumnLimit: 0
 SpaceAfterCStyleCast: true
-SpaceBeforeParens: Custom
-SpaceBeforeParensOptions:
-  AfterFunctionDeclarationName: true
-  AfterFunctionDefinitionName: true
