@@ -60,3 +60,13 @@ test('exports', (t) => {
   t.is(typeof mod.open, 'function')
   t.is(typeof mod.exports, 'function')
 })
+
+test('library and symbol names with a NUL', (t) => {
+  t.exception.all(() => open(addon + '\0.txt'), TypeError)
+
+  const lib = open(addon)
+  t.teardown(() => lib.close())
+
+  t.exception.all(() => lib.symbol(register + '\0x'), TypeError)
+  t.exception.all(() => lib.exports(register + '\0x'), TypeError)
+})
