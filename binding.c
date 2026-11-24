@@ -2,6 +2,7 @@
 #include <bare.h>
 #include <js.h>
 #include <stdlib.h>
+#include <string.h>
 #include <utf.h>
 #include <uv.h>
 
@@ -25,6 +26,15 @@ dl_native_get_string(js_env_t *env, js_value_t *value) {
   err = js_get_value_string_utf8(env, value, str, len, NULL);
   assert(err == 0);
 
+  if (strlen((char *) str) != len - 1 /* NULL */) {
+    free(str);
+
+    err = js_throw_type_error(env, NULL, "String must not contain null bytes");
+    assert(err == 0);
+
+    return NULL;
+  }
+
   return str;
 }
 
@@ -47,6 +57,7 @@ dl_native_open(js_env_t *env, js_callback_info_t *info) {
   assert(err == 0);
 
   utf8_t *filename = dl_native_get_string(env, argv[0]);
+  if (filename == NULL) return NULL;
 
   err = uv_dlopen((char *) filename, &lib->lib);
 
@@ -108,6 +119,7 @@ dl_native_sym(js_env_t *env, js_callback_info_t *info) {
   assert(err == 0);
 
   utf8_t *name = dl_native_get_string(env, argv[1]);
+  if (name == NULL) return NULL;
 
   err = uv_dlsym(&lib->lib, (char *) name, sym);
 
@@ -140,6 +152,7 @@ dl_native_exports(js_env_t *env, js_callback_info_t *info) {
   assert(err == 0);
 
   utf8_t *name = dl_native_get_string(env, argv[1]);
+  if (name == NULL) return NULL;
 
   dl_native_exports_cb cb;
   err = uv_dlsym(&lib->lib, (char *) name, (void **) &cb);
